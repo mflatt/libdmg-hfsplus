@@ -109,7 +109,7 @@ void cmd_add(Volume* volume, int argc, const char *argv[]) {
 		printf("file to add not found");
 	}
 
-	add_hfs(volume, inFile, argv[2]);
+	add_hfs(volume, inFile, argv[2], inFile->getModifyTime(inFile));
 }
 
 void cmd_rm(Volume* volume, int argc, const char *argv[]) {

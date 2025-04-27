@@ -900,7 +900,7 @@ int makeSymlink(const char* pathName, const char* target, Volume* volume) {
 	record = (HFSPlusCatalogFile*) getRecordFromPath3(pathName, volume, NULL, NULL, TRUE, FALSE, kHFSRootFolderID);
 
 	if(!record) {
-		newFile(pathName, volume);
+          newFile(pathName, volume, time(NULL));
 		record = (HFSPlusCatalogFile*) getRecordFromPath(pathName, volume, NULL, NULL);
 		if(!record) {
 			return FALSE;
@@ -1018,7 +1018,7 @@ HFSCatalogNodeID newFolder(const char* pathName, Volume* volume) {
   return newFolderID;
 }
 
-HFSCatalogNodeID newFile(const char* pathName, Volume* volume) {
+HFSCatalogNodeID newFile(const char* pathName, Volume* volume, time_t timestamp) {
   HFSPlusCatalogFolder* parentFolder;
   HFSPlusCatalogFile file;
   HFSPlusCatalogKey key;
@@ -1066,7 +1066,7 @@ HFSCatalogNodeID newFile(const char* pathName, Volume* volume) {
   file.flags = kHFSThreadExistsMask;
   file.reserved1 = 0;
   file.fileID = newFileID;
-  file.createDate = UNIX_TO_APPLE_TIME(time(NULL));
+  file.createDate = UNIX_TO_APPLE_TIME(timestamp);
   file.contentModDate = file.createDate;
   file.attributeModDate = file.createDate;
   file.accessDate = file.createDate;

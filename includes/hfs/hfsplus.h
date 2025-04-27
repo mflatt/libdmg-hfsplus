@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 
 #include "common.h"
@@ -546,7 +547,7 @@ extern "C" {
 	int move(const char* source, const char* dest, Volume* volume);
 	int removeFile(const char* fileName, Volume* volume);
 	HFSCatalogNodeID newFolder(const char* pathName, Volume* volume);
-	HFSCatalogNodeID newFile(const char* pathName, Volume* volume);
+        HFSCatalogNodeID newFile(const char* pathName, Volume* volume, time_t timestamp);
 	int chmodFile(const char* pathName, int mode, Volume* volume);
 	int chownFile(const char* pathName, uint32_t owner, uint32_t group, Volume* volume);
 	int makeSymlink(const char* pathName, const char* target, Volume* volume);

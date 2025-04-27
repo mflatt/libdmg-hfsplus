@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "abstractfile.h"
 #include "common.h"
@@ -26,6 +28,15 @@ off_t ftellWrapper(AbstractFile* file) {
 void fcloseWrapper(AbstractFile* file) {
   fclose((FILE*) (file->data));
   free(file);
+}
+
+time_t fGetModifyTime(AbstractFile* file) {
+    struct stat st;
+    if (fstat(fileno((FILE*) (file->data)), &st) == 0) {
+        return st.st_mtime;
+    } else {
+      return time(NULL);
+    }
 }
 
 off_t fileGetLength(AbstractFile* file) {
@@ -57,6 +68,7 @@ AbstractFile* createAbstractFileFromFile(FILE* file) {
 	toReturn->tell = ftellWrapper;
 	toReturn->getLength = fileGetLength;
 	toReturn->close = fcloseWrapper;
+        toReturn->getModifyTime = fGetModifyTime;
 	toReturn->type = AbstractFileTypeFile;
 	return toReturn;
 }
@@ -79,6 +91,10 @@ off_t dummyTell(AbstractFile* file) {
   return *((off_t*) (file->data));
 }
 
+time_t dummyModifyTime(AbstractFile* file) {
+  return time(NULL);
+}
+
 void dummyClose(AbstractFile* file) {
   free(file);
 }
@@ -92,6 +108,7 @@ AbstractFile* createAbstractFileFromDummy() {
 	toReturn->seek = dummySeek;
 	toReturn->tell = dummyTell;
 	toReturn->getLength = NULL;
+        toReturn->getModifyTime = dummyModifyTime;
 	toReturn->close = dummyClose;
 	toReturn->type = AbstractFileTypeDummy;
 	return toReturn;
@@ -158,6 +175,7 @@ AbstractFile* createAbstractFileFromMemory(void** buffer, size_t size) {
 	toReturn->tell = memTell;
 	toReturn->getLength = memGetLength;
 	toReturn->close = memClose;
+        toReturn->getModifyTime = dummyModifyTime;
 	toReturn->type = AbstractFileTypeMem;
 	return toReturn;
 }
@@ -283,6 +301,7 @@ AbstractFile* createAbstractFileFromMemoryFile(void** buffer, size_t* size) {
 	toReturn->tell = memFileTell;
 	toReturn->getLength = memFileGetLength;
 	toReturn->close = memFileClose;
+        toReturn->getModifyTime = dummyModifyTime;
 	toReturn->type = AbstractFileTypeMemFile;
 	return toReturn;
 }
@@ -305,6 +324,7 @@ AbstractFile* createAbstractFileFromMemoryFileBuffer(void** buffer, size_t* size
 	toReturn->tell = memFileTell;
 	toReturn->getLength = memFileGetLength;
 	toReturn->close = memFileClose;
+        toReturn->getModifyTime = dummyModifyTime;
 	toReturn->type = AbstractFileTypeMemFile;
 	return toReturn;
 }

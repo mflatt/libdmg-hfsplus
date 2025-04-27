@@ -133,7 +133,7 @@ void writeToHFSFile(HFSPlusCatalogFile* file, AbstractFile* input, Volume* volum
 	free(buffer);
 }
 
-void get_hfs(Volume* volume, const char* inFileName, AbstractFile* output) {
+void get_hfs(Volume* volume, const char* inFileName, AbstractFile* output, time_t *timestamp_out) {
 	HFSPlusCatalogRecord* record;
 	
 	record = getRecordFromPath(inFileName, volume, NULL, NULL);
@@ -149,11 +149,14 @@ void get_hfs(Volume* volume, const char* inFileName, AbstractFile* output) {
 		printf("No such file or directory\n");
 		exit(0);
 	}
+
+        if (timestamp_out != NULL)
+          *timestamp_out = APPLE_TO_UNIX_TIME(((HFSPlusCatalogFile *)record)->contentModDate);
 	
 	free(record);
 }
 
-int add_hfs(Volume* volume, AbstractFile* inFile, const char* outFileName) {
+int add_hfs(Volume* volume, AbstractFile* inFile, const char* outFileName, time_t timestamp) {
 	HFSPlusCatalogRecord* record;
 	int ret;
 	
@@ -168,7 +171,7 @@ int add_hfs(Volume* volume, AbstractFile* inFile, const char* outFileName) {
 			exit(0);
 		}
 	} else {
-		if(newFile(outFileName, volume)) {
+          if(newFile(outFileName, volume, timestamp)) {
 			record = getRecordFromPath(outFileName, volume, NULL, NULL);
 			writeToHFSFile((HFSPlusCatalogFile*)record, inFile, volume);
 			ret = TRUE;
@@ -363,11 +366,11 @@ void addAllInFolder(HFSCatalogNodeID folderID, Volume* volume, const char* paren
 			ASSERT(chdir(cwd) == 0, "chdir");
 		} else {
 			printf("file: %s\n", fullName);	fflush(stdout);
-			if(cnid == 0) {
-				cnid = newFile(fullName, volume);
-			}
 			file = createAbstractFileFromFile(fopen(ent->d_name, "rb"));
 			ASSERT(file != NULL, "fopen");
+			if(cnid == 0) {
+                          cnid = newFile(fullName, volume, file->getModifyTime(file));
+			}
 			outFile = (HFSPlusCatalogFile*)getRecordByCNID(cnid, volume);
 			writeToHFSFile(outFile, file, volume);
 			file->close(file);
@@ -564,6 +567,7 @@ int copyAcrossVolumes(Volume* volume1, Volume* volume2, char* path1, char* path2
 	void* buffer;
 	size_t bufferSize;
 	AbstractFile* tmpFile;
+        time_t timestamp;
 	int ret;
 	
 	buffer = malloc(1);
@@ -575,7 +579,7 @@ int copyAcrossVolumes(Volume* volume1, Volume* volume2, char* path1, char* path2
 		printf("retrieving... "); fflush(stdout);
 	}
 
-	get_hfs(volume1, path1, tmpFile);
+	get_hfs(volume1, path1, tmpFile, &timestamp);
 	tmpFile->seek(tmpFile, 0);
 
 	if(!silence)
@@ -583,7 +587,7 @@ int copyAcrossVolumes(Volume* volume1, Volume* volume2, char* path1, char* path2
 		printf("writing (%ld)... ", (long) tmpFile->getLength(tmpFile)); fflush(stdout);
 	}
 
-	ret = add_hfs(volume2, tmpFile, path2);
+	ret = add_hfs(volume2, tmpFile, path2, timestamp);
 
 	if(!silence)
 	{
@@ -768,7 +772,7 @@ void hfs_untar(Volume* volume, AbstractFile* tarFile) {
 			tarFile->seek(tarFile, curRecord + 512);
 			tarFile->read(tarFile, buffer, size);
 			AbstractFile* inFile = createAbstractFileFromMemory(&buffer, size);
-			add_hfs(volume, inFile, fileName);
+			add_hfs(volume, inFile, fileName, inFile->getModifyTime(inFile));
 			free(buffer);
 		} else if(type == 5) {
 			if(!silence)

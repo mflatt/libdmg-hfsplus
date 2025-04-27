@@ -7,8 +7,8 @@ extern "C" {
 #endif
 	void writeToFile(HFSPlusCatalogFile* file, AbstractFile* output, Volume* volume);
 	void writeToHFSFile(HFSPlusCatalogFile* file, AbstractFile* input, Volume* volume);
-	void get_hfs(Volume* volume, const char* inFileName, AbstractFile* output);
-	int add_hfs(Volume* volume, AbstractFile* inFile, const char* outFileName);
+        void get_hfs(Volume* volume, const char* inFileName, AbstractFile* output, time_t *timestamp_out);
+        int add_hfs(Volume* volume, AbstractFile* inFile, const char* outFileName, time_t timestamp);
 	void grow_hfs(Volume* volume, uint64_t newSize);
 	void removeAllInFolder(HFSCatalogNodeID folderID, Volume* volume, const char* parentName);
 	void addAllInFolder(HFSCatalogNodeID folderID, Volume* volume, const char* parentName);
